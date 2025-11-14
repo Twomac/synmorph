@@ -1,29 +1,66 @@
-# Autocorrelation using numpy.correlate
+from multiprocessing import Pool, cpu_count
+import time
 
-import numpy as np
-import matplotlib.pyplot as plt
+def f(x):
+    time.sleep(1)
+    return x * x
 
-# Generate a sample time series
-data = np.sin(np.linspace(0, 4 * np.pi, 100)) + np.random.randn(100) * 0.2
+if __name__ == "__main__":  # REQUIRED on macOS & Windows
+    with Pool(cpu_count()) as pool:
+        results = pool.map(f, range(10))
 
-# Remove the mean for proper autocorrelation calculation
-data_demeaned = data - np.mean(data)
+    print(results)
 
-# Calculate autocorrelation using numpy.correlate
-# mode='full' returns the full discrete linear cross-correlation
-autocorr = np.correlate(data_demeaned, data_demeaned, mode='full')
 
-# Normalize by the zero-lag value to get the autocorrelation function (ACF)
-# The zero-lag value is at the center of the 'full' output
-autocorr /= autocorr[len(data) - 1]
+def simulate(a, b):
+    time.sleep(2)
+    return a * b
 
-# Generate lag values
-lags = np.arange(-len(data) + 1, len(data))
+if __name__ == "__main__":
+    params = [(1, 2), (3, 4), (5, 6)]
+    with Pool(cpu_count()) as pool:
+        results = pool.starmap(simulate, params)
+    print(results)  # [2, 12, 30]
 
-plt.figure(figsize=(10, 5))
-plt.stem(lags, autocorr)
-plt.title("Autocorrelation Function (ACF) using numpy.correlate")
-plt.xlabel("Lag")
-plt.ylabel("Autocorrelation Coefficient")
-plt.grid(True)
-plt.show()
+from multiprocessing import Pool, cpu_count
+from itertools import product
+
+# -------------------------
+# Worker function
+# -------------------------
+def compute(n, q, x, params):
+    """Compute a simple expression using both per-job and global parameters."""
+    result = n + x * q + params["offset"]
+    return (n, q, result)
+
+# -------------------------
+# Main execution
+# -------------------------
+if __name__ == "__main__":
+
+    # Fixed "global" parameters
+    x = 5.0
+    global_params = {
+        "offset": 10,
+        "experiment": "2D_grid_demo"
+    }
+
+    # Parameter sweep ranges
+    n_values = [0, 1, 2, 3, 4]
+    q_values = [0.1, 0.5, 1.0, 2.0]
+
+    # Generate all combinations (Cartesian product)
+    param_grid = list(product(n_values, q_values))
+
+    # Add shared parameters to each tuple
+    # Each element becomes (n, q, x, params)
+    args = [(n, q, x, global_params) for (n, q) in param_grid]
+
+    # Parallel computation
+    with Pool(cpu_count()) as pool:
+        results = pool.starmap(compute, args)
+
+    # Show results
+    print("Results (n, q, result):")
+    for r in results:
+        print(r)

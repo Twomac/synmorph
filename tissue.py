@@ -46,6 +46,9 @@ class Tissue:
             self.boundary_LEP = None
             self.boundary_fraction = None
 
+            # boolean if an individual cell is surrounded by only ECM
+            self.ejected = None
+
             if meshfile is None:
                 assert init_params is not None, "Must provide initialization parameters unless a previous mesh is parsed"
                 if initialize:
@@ -335,6 +338,43 @@ class Tissue:
         self.boundary_fraction = LEP_ECM / (MEP_ECM + LEP_ECM)
 
         return self.boundary_fraction
+    
+    import numpy as np
+
+    def find_ejected_cells(self):
+        """
+        Identify LEP/MEP cells (type 0 or 1) that are entirely surrounded by ECM (type 2),
+        using the sparse COO interface adjacency matrix.
+        Vectorized: avoids Python loops.
+
+        Returns
+        -------
+        ejected : np.ndarray[bool]
+            Boolean mask, True where a real cell is surrounded only by ECM.
+        """
+        c_types = self.c_types
+        n_cells = len(c_types)
+        int_adj = self.mesh.get_l_interface()
+
+        # Identify all edges where at least one end is NOT ECM
+        # (because ECM-ECM edges don't matter)
+        non_ecm_mask = (c_types[int_adj.row] != 2) | (c_types[int_adj.col] != 2)
+        rows = int_adj.row[non_ecm_mask]
+        cols = int_adj.col[non_ecm_mask]
+
+        # For each edge, mark cells that have a non-ECM neighbor
+        # A real cell will be marked if it touches another real cell
+        has_non_ecm_neighbor = np.zeros(n_cells, dtype=bool)
+        has_non_ecm_neighbor[rows[c_types[cols] != 2]] = True
+        has_non_ecm_neighbor[cols[c_types[rows] != 2]] = True
+
+        # Ejected if:
+        # - It's a real cell (type 0 or 1)
+        # - It has NO non-ECM neighbor
+        ejected = (c_types < 2) & (~has_non_ecm_neighbor)
+
+        self.ejected = ejected
+        return ejected
 
     @property
     def init_noise(self):

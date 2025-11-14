@@ -191,7 +191,7 @@ def animate(x_save, phi_save, L, dt, tskip, cols, n_frames=100, file_name=None, 
         cl = plt.colorbar(sm, ax=ax1, pad=0.05, fraction=0.05, aspect=10, orientation="vertical")
         cl.set_label(cbar["label"])
 
-    line_phi, = ax2.plot([], [], lw=2, color="tab:red")
+    line_phi, = ax2.plot([], [], lw=0.5, color="tab:red")
     ax2.set_xlim(time_points[0], time_points[-1])
     ax2.set_ylim(0, 1)
     ax2.set_xlabel("Time")

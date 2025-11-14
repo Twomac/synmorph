@@ -13,7 +13,7 @@ def binned_stats(sim_dict, bin_size=25):
     binned_std, bin_edges, binnumber = binned_statistic(sim_dict['t_span_save'], sim_dict['phi_save'][:, 2], statistic='std', bins=num_bins)
 
     # 2. Create Figure and Axes
-    fig, ax = plt.subplots(figsize=(8, 6))  # Create a figure and a single axes, set figure size
+    fig, ax = plt.subplots(figsize=(6, 4))  # Create a figure and a single axes, set figure size
 
     # 3. Plot Data
     ax.plot(bin_ranges, binned_mean, label=f'Mean', color='skyblue', linewidth=2, linestyle='-')

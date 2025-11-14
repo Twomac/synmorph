@@ -69,6 +69,7 @@ class Simulation:
         self.var_save = None
         self.grn = None
         self.phi_save = None  # saving boundary fraction at each time point
+        self.ejected_save = None  # checking for ejected cells at saved time points
 
         self.initialize()
 
@@ -149,6 +150,15 @@ class Simulation:
         """
         self.phi_save = np.zeros((self.nts, 3))
 
+    def initialize_ejected_save(self):
+        """
+        Generate an empty array of ejected booleans for saving (at the times defined by self.t_span_save)
+
+        Of size nts
+        :return:
+        """
+        self.phi_save = np.zeros(self.nts, dtype=bool)
+
 
     def simulate(self, progress_bar=True):
         """
@@ -170,7 +180,7 @@ class Simulation:
 
         self.t.mesh.get_l_interface()  # get the interface lengths for the initial condition.
         #print(self.t.mesh.l_int)
-        print("\n>>> get_l_interface() completed <<<\n", flush=True)
+        #print("\n>>> get_l_interface() completed <<<\n", flush=True)
         #print(self.t.mesh.l_int.data)
 
         if progress_bar:  # set up the progress bar if wanted.
@@ -188,15 +198,14 @@ class Simulation:
             
             if not i % self.tskip:
                 ## for the saving time-points, copy over to x_save (and also var_save)
-                # bf = self.t.get_boundary_fraction()  # update the boundary fraction
-                # self.t.boundary_fraction = bf
+                bf = self.t.get_boundary_fraction()  # update the boundary fraction
+                self.t.boundary_fraction = bf
                 self.x_save[k] = self.t.mesh.x
                 self.tri_save[k] = self.t.mesh.tri
-                # self.phi_save[k, :] = self.t.boundary_LEP, self.t.boundary_MEP, self.t.boundary_fraction
+                self.phi_save[k, :] = self.t.boundary_LEP, self.t.boundary_MEP, self.t.boundary_fraction
+                self.ejected_save = np.any(self.t.find_ejected_cells())
                 if grn:
                     self.var_save[k] = self.grn.var
-                if k == 0:
-                    print("phi_save[0] =", self.phi_save[0], flush=True)
                 k += 1
                 if saveall:  # if saveal3l is true, then save the corresponding tissue class to a pickle file.
                     self.t.set_time(t)

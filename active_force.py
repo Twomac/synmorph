@@ -32,7 +32,13 @@ class ActiveForce:
             # dictionary mapping type index → motility
             v0_arr = np.zeros(self.t.mesh.n_c)
             for ctype, v0_val in v0_param.items():
-                v0_arr[self.t.c_types == int(ctype)] = float(v0_val)
+                if isinstance(v0_val, (list, tuple, np.ndarray)):
+                    # a given cell type can have a range of motility values
+                    motilities = np.random.rand(self.t.c_typeN[ctype]) * (float(np.max(v0_val)) - float(np.min(v0_val))) + float(np.min(v0_val))
+                    v0_arr[self.t.c_types == int(ctype)] = motilities
+                else: 
+                    # assign single motility value to all cells of this type
+                    v0_arr[self.t.c_types == int(ctype)] = float(v0_val)
 
         elif isinstance(v0_param, (list, tuple, np.ndarray)):
             # sequence indexed by cell type
