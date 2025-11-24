@@ -100,6 +100,10 @@ class Tissue:
         :param run_options:
         :return:
         """
+        seed = self.init_params.get("random_seed", None)
+        if seed is not None:
+            np.random.seed(seed)
+            
         self.initialize_mesh(run_options=run_options)
         self.assign_ctypes()
 

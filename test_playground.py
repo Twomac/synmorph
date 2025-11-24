@@ -1,6 +1,8 @@
 from multiprocessing import Pool, cpu_count
 import time
 
+print("CPUs:", cpu_count())
+
 def f(x):
     time.sleep(1)
     return x * x

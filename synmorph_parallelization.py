@@ -2,6 +2,7 @@ from multiprocessing import Pool, cpu_count
 import time
 from itertools import product
 
+import copy
 import numpy as np
 import sys
 import os
@@ -11,10 +12,11 @@ import synmorph as sm
 # -------------------------
 # Worker function
 # -------------------------
-def run_spv_sim(Dr, v0, params):
+def run_spv_sim(Dr, v0, rep, global_params):
     """Run a synmorph SPV simulation with given parameters. Allows for parallel execution to perform activity parameter sweeps."""
-
     start = time.perf_counter()
+
+    params = copy.deepcopy(global_params)  # prevents mutating the shared dict
 
     # ---- motility parameters ----
     v = {
@@ -34,15 +36,21 @@ def run_spv_sim(Dr, v0, params):
                         run_options=params["run_options"],
                         save_options=params["save_options"])
     
-    params["save_options"]["name"] = f'Dr{round(Dr, 3)}_v{v0}'
+    params["save_options"]["name"] = f'Dr{round(Dr, 3)}_v{v0}_{rep}'
 
-    sim.simulate(progress_bar=False)
+    sim.simulate(progress_bar=params["run_options"]["progress_bar"])
 
     sim.save(params["save_options"]["name"], id=sim.id, 
          dir_path=params["save_options"]["result_dir"], 
          compressed=params["save_options"]["compressed"])
     
+    if params["save_options"]["animation"]:
+        sim.animate_c_types(n_frames=params["save_options"]["num_frames"],
+                    c_type_col_map=["#FFD232", "#961E96", "#E5E5E5"],
+                    file_name=params["save_options"]["name"], dir_name=params["save_options"]["animation_directory"])
+    
     end = time.perf_counter()
+    print("Dr, v0, rep:", Dr, v0, rep)
     print(f"  Elapsed time of sim: {end - start:.6f} seconds")
 
     return (Dr, v0, sim.id)
@@ -54,9 +62,9 @@ if __name__ == "__main__":
 
     # ---- set basic params ---- 
     tissue_radius = 4 # radius of tissue in # cells
-    N_t = 10000 # final time
+    N_t = 8000 # final time
     dt = 0.025       # width of timestep 
-    tskip = 40      # num timesteps between saved timepoints
+    tskip = 3200      # num timesteps between saved timepoints
     exp_dir = 'test2'       # make a function of key parameters to save them in title
 
     ctype_proportions = (0.5,0.5)       # proportions of LEP and MEP, respectively
@@ -91,6 +99,7 @@ if __name__ == "__main__":
         "ball_radius": tissue_radius,                       # choose your radius in domain units
         "ball_non_ecm_types": (0, 1),     # types inside ball 0: LEP, 1: MEP
         "ball_non_ecm_proportions": ctype_proportions,  # <-- use this for 80/20 split
+        "random_seed": 42                  # setting random seed for reproducibility
     }
 
     simulation_params = {"dt": dt,  # width of timestep
@@ -99,12 +108,16 @@ if __name__ == "__main__":
                         "grn_sim": None}
 
     save_options = {"save": "last",
-                    "result_dir": "./results/Parallel_Sweep/",
+                    "result_dir": "./results/Single_Seed/",
                     "name": None,
-                    "compressed": True} 
+                    "compressed": True,
+                    "animation": True,
+                    "animation_directory": "./SPV_videos/Single_Seed/",
+                    "num_frames": int(N_t/(tskip * dt * 5))} 
 
     run_options = {"equiangulate": True,
-                "equi_nkill": 3}
+                "equi_nkill": 3,
+                "progress_bar": False,}
 
 
     # Fixed "global" parameters
@@ -118,18 +131,20 @@ if __name__ == "__main__":
 
 
     # ---- motility param sweep values ---- 
-    tau_vals = [0.02, 0.04, 0.08, 0.16, 0.32, 0.64]
+    tau_vals = [0.02, 0.04, 0.08, 0.16, 0.32]
     Dr_vals = 1/np.array(tau_vals)
-    v0_vals = [0.15, 0.3, 0.6, 1.2, 2.4]
+    v0_vals = [0.15, 0.3, 0.6, 0.9, 1.2]
+    rep_vals = range(1,4) # number of repetitions per param set
 
     # Generate all combinations (Cartesian product)
-    param_grid = list(product(Dr_vals, v0_vals))
+    param_3Dgrid = list(product(Dr_vals, v0_vals, rep_vals))
 
     # Add shared parameters to each tuple
-    args = [(Dr, v0, global_params) for (Dr, v0) in param_grid]
+    args = [(Dr, v0, rep, global_params) for (Dr, v0, rep) in param_3Dgrid]
 
     # Parallel computation
     with Pool(cpu_count()) as pool:
+        print("Starting runs...")
         results = pool.starmap(run_spv_sim, args)
 
     # Show results
