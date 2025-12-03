@@ -66,15 +66,15 @@ if __name__ == "__main__":
     tissue_radius = 4 # radius of tissue in # cells
     N_t = 8000 # final time
     dt = 0.025       # width of timestep 
-    tskip = 1600      # num timesteps between saved timepoints
+    tskip = 40      # num timesteps between saved timepoints
     exp_dir = 'test2'       # make a function of key parameters to save them in title
-
+    dir_name = "Macrostate_Degeneracies" # directory name to save results & animations
     ctype_proportions = (0.5,0.5)       # proportions of LEP and MEP, respectively
 
 
     # ---- set relative magnitudes of tensions (Y) and interaction matrix (W)---- 
     gamma_scale = 0.12   # scaling factor for tensions
-    Y = np.array([-0.1, -0.1, -0.1, -0.2, -0.3]) * gamma_scale    # 'LL', 'LM', 'LX', 'MM', 'MX' interfacial tensions
+    Y = np.array([-0.2, -0.2, -0.3, -0.2, -0.3]) * gamma_scale    # 'LL', 'LM', 'LX', 'MM', 'MX' interfacial tensions
     ECM_ECM = -0.15  # -0.3       # ECM-ECM interfacial tension
 
     # ---- interaction matrix ----
@@ -110,11 +110,11 @@ if __name__ == "__main__":
                         "grn_sim": None}
 
     save_options = {"save": "last",
-                    "result_dir": "./results/Multiseed/",
+                    "result_dir": f"./results/{dir_name}/",
                     "name": None,
                     "compressed": True,
                     "animation": True,
-                    "animation_directory": "./SPV_videos/Multiseed/",
+                    "animation_directory": f"./SPV_videos/{dir_name}/",
                     "num_frames": int(N_t/(tskip * dt * 5))} 
 
     run_options = {"equiangulate": True,
@@ -133,10 +133,10 @@ if __name__ == "__main__":
 
 
     # ---- motility param sweep values ---- 
-    tau_vals = [0.01, 0.02, 0.04, 0.08]
+    tau_vals = [0.08, 0.16]
     Dr_vals = 1/np.array(tau_vals)
-    v0_vals = [0.01, 0.05, 0.1, 0.2, 0.4, 0.8]
-    rep_vals = range(1,6) # number of repetitions per param set
+    v0_vals = [0.2, 0.4]
+    rep_vals = range(5, 9) # number of repetitions per param set
 
     # Generate all combinations (Cartesian product)
     param_3Dgrid = list(product(Dr_vals, v0_vals, rep_vals))

@@ -66,7 +66,7 @@ if __name__ == "__main__":
     tissue_radius = 4 # radius of tissue in # cells
     N_t = 8000 # final time
     dt = 0.025       # width of timestep 
-    tskip = 1600      # num timesteps between saved timepoints
+    tskip = 40      # num timesteps between saved timepoints
     exp_dir = 'test2'       # make a function of key parameters to save them in title
 
     ctype_proportions = (0.5,0.5)       # proportions of LEP and MEP, respectively
@@ -110,11 +110,11 @@ if __name__ == "__main__":
                         "grn_sim": None}
 
     save_options = {"save": "last",
-                    "result_dir": "./results/Multiseed/",
+                    "result_dir": "./results/Jamming_Boundary/",
                     "name": None,
                     "compressed": True,
                     "animation": True,
-                    "animation_directory": "./SPV_videos/Multiseed/",
+                    "animation_directory": "./SPV_videos/Jamming_Boundary/",
                     "num_frames": int(N_t/(tskip * dt * 5))} 
 
     run_options = {"equiangulate": True,
@@ -133,10 +133,10 @@ if __name__ == "__main__":
 
 
     # ---- motility param sweep values ---- 
-    tau_vals = [0.01, 0.02, 0.04, 0.08, 0.16]
+    tau_vals = [0.04, 0.08, 0.16]
     Dr_vals = 1/np.array(tau_vals)
-    v0_vals = [0.01, 0.05, 0.1, 0.2, 0.4, 0.8]
-    rep_vals = range(6,11) # number of repetitions per param set
+    v0_vals = [0.4, 0.8]
+    rep_vals = range(1,2) # number of repetitions per param set
 
     # Generate all combinations (Cartesian product)
     param_3Dgrid = list(product(Dr_vals, v0_vals, rep_vals))

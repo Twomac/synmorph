@@ -43,7 +43,9 @@ class Tissue:
             self.tc_types, self.tc_typesp, self.tc_typesm = None, None, None
 
             self.boundary_MEP = None
+            self.boundary_MEP_count = None
             self.boundary_LEP = None
+            self.boundary_LEP_count = None
             self.boundary_fraction = None
 
             # boolean if an individual cell is surrounded by only ECM
@@ -295,7 +297,7 @@ class Tissue:
         self.mesh.x = x
         self.update_mechanics()
 
-    def get_boundary_interface_length(self, ctype):
+    def get_boundary_interface(self, ctype):
 
         """
         Get the number of cells of a given type on the boundary with ECM.
@@ -310,24 +312,29 @@ class Tissue:
         ECM_IDs = np.where(c_types == 2)[0]
 
         # extract the interface length adjacency matrix from the mesh
-        int_weighted_adj = self.mesh.get_l_interface()
+        int_adj = self.mesh.get_l_interface()
         # Boolean masks for edges touching the given cell type and ECM
-        ECM_mask = np.isin(int_weighted_adj.col, ECM_IDs)
-        CELL_mask = np.isin(int_weighted_adj.row, CELL_IDs)
+        ECM_mask = np.isin(int_adj.col, ECM_IDs)
+        CELL_mask = np.isin(int_adj.row, CELL_IDs)
         # Mask for edges connecting cell type <-> ECM
         boundary_edges_mask = ECM_mask & CELL_mask
         # Sum the interface lengths for those edges
-        total_interface_length = np.sum(int_weighted_adj.data[boundary_edges_mask])
+        total_interface_length = np.sum(int_adj.data[boundary_edges_mask])
 
-        return total_interface_length
+        # Get unique cell IDs of the given type that are on the boundary
+        boundary_cell_ids = np.unique(int_adj.row[boundary_edges_mask])
+        boundary_cell_count = len(boundary_cell_ids)
+
+        return total_interface_length, boundary_cell_count
+    
 
     def get_boundary_LEP(self):
-        self.boundary_LEP = self.get_boundary_interface_length(0)
-        return self.boundary_LEP
+        self.boundary_LEP, self.boundary_LEP_count = self.get_boundary_interface(0)
+        return self.boundary_LEP, self.boundary_LEP_count
 
     def get_boundary_MEP(self):
-        self.boundary_MEP = self.get_boundary_interface_length(1)
-        return self.boundary_MEP
+        self.boundary_MEP, self.boundary_MEP_count = self.get_boundary_interface(1)
+        return self.boundary_MEP, self.boundary_MEP_count
 
     def get_boundary_fraction(self):
         """
@@ -336,15 +343,14 @@ class Tissue:
         """
         assert self.c_types is not None, "Cell types have not been assigned"
         
-        MEP_ECM = self.get_boundary_MEP()
-        LEP_ECM = self.get_boundary_LEP()
+        MEP_ECM, MEP_count = self.get_boundary_MEP()
+        LEP_ECM, LEP_count = self.get_boundary_LEP()
 
         self.boundary_fraction = LEP_ECM / (MEP_ECM + LEP_ECM)
 
         return self.boundary_fraction
     
-    import numpy as np
-
+    
     def find_ejected_cells(self):
         """
         Identify LEP/MEP cells (type 0 or 1) that are entirely surrounded by ECM (type 2),

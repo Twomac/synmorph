@@ -112,6 +112,7 @@ class Simulation:
         self.initialize_x_save()
         self.initialize_tri_save()
         self.initialize_phi_save()
+        self.initialize_ejected_save()
 
     def get_t_span(self):
         """
@@ -145,10 +146,10 @@ class Simulation:
         """
         Generate an empty array of boundary fractions for saving (at the times defined by self.t_span_save)
 
-        Of size nts x 3
+        Of size nts x 5
         :return:
         """
-        self.phi_save = np.zeros((self.nts, 3))
+        self.phi_save = np.zeros((self.nts, 5))
 
     def initialize_ejected_save(self):
         """
@@ -157,7 +158,7 @@ class Simulation:
         Of size nts
         :return:
         """
-        self.phi_save = np.zeros(self.nts, dtype=bool)
+        self.ejected_save = np.zeros(self.nts, dtype=bool)
 
 
     def simulate(self, progress_bar=True):
@@ -202,12 +203,12 @@ class Simulation:
                 self.t.boundary_fraction = bf
                 self.x_save[k] = self.t.mesh.x
                 self.tri_save[k] = self.t.mesh.tri
-                self.phi_save[k, :] = self.t.boundary_LEP, self.t.boundary_MEP, self.t.boundary_fraction
-                self.ejected_save = np.any(self.t.find_ejected_cells())
+                self.phi_save[k, :] = self.t.boundary_LEP, self.t.boundary_MEP, self.t.boundary_fraction, self.t.boundary_LEP_count, self.t.boundary_MEP_count
+                self.ejected_save[k] = np.any(self.t.find_ejected_cells())
                 if grn:
                     self.var_save[k] = self.grn.var
                 k += 1
-                if saveall:  # if saveal3l is true, then save the corresponding tissue class to a pickle file.
+                if saveall:  # if saveall is true, then save the corresponding tissue class to a pickle file.
                     self.t.set_time(t)
                     self.t.save("%s_f%d" % (self.name, i),
                                 id={"Date": self.date},
