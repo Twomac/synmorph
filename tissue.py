@@ -300,9 +300,11 @@ class Tissue:
     def get_boundary_interface(self, ctype):
 
         """
-        Get the number of cells of a given type on the boundary with ECM.
+        Get the total  
+        as well as the .
         :param ctype: cell type to check
-        :return:
+        :return total_interface_length: interface length of ctype cells with ECM
+        :return boundary_cell_count: number of ctype cells on the boundary with ECM (having an interface of any length)
         """
         assert ctype != 2, "ECM type cannot be on boundary against itself."
 
@@ -318,7 +320,7 @@ class Tissue:
         CELL_mask = np.isin(int_adj.row, CELL_IDs)
         # Mask for edges connecting cell type <-> ECM
         boundary_edges_mask = ECM_mask & CELL_mask
-        # Sum the interface lengths for those edges
+        # Sum the interface lengths for those edges, don't need to get unique IDs because one cell can have multiple edges with ECM
         total_interface_length = np.sum(int_adj.data[boundary_edges_mask])
 
         # Get unique cell IDs of the given type that are on the boundary
